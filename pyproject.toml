@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "verificar-curp"
+version = "1.0.0"
+description = "SDK oficial de Verificar CURP: valida la estructura de una CURP, cotéjala con los datos de la persona y verifícala en el registro RENAPO."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "Verificar CURP" }]
+keywords = ["CURP", "RENAPO", "validar CURP", "verificar CURP", "consultar CURP", "Mexico", "KYC", "identidad"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://verificarcurp.com"
+Documentation = "https://verificarcurp.com/docs"
+Repository = "https://github.com/rcfrias/verificar-curp-python"
+Issues = "https://github.com/rcfrias/verificar-curp-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/verificar_curp"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "README.md", "LICENSE"]
