@@ -5,7 +5,7 @@ https://verificarcurp.com/docs
 
 from .client import VerificarCurpClient
 from .errors import VerificarCurpError
-from .types import Persona, Reintentos, ValidateResult, VerificationStatusResult
+from .types import CaptureLink, Persona, Reintentos, ValidateResult, VerificationStatusResult
 from .webhooks import (
     IDEMPOTENCY_KEY_HEADER,
     SIGNATURE_HEADER,
@@ -17,6 +17,7 @@ from .webhooks import (
 __all__ = [
     "VerificarCurpClient",
     "VerificarCurpError",
+    "CaptureLink",
     "Persona",
     "Reintentos",
     "ValidateResult",
@@ -28,4 +29,4 @@ __all__ = [
     "IDEMPOTENCY_KEY_HEADER",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

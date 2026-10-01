@@ -10,13 +10,13 @@ import urllib.request
 from typing import Any, Callable, Optional
 
 from .errors import VerificarCurpError
-from .types import Persona, Reintentos, ValidateResult, VerificationStatusResult
+from .types import CaptureLink, Persona, Reintentos, ValidateResult, VerificationStatusResult
 
 DEFAULT_BASE_URL = "https://verificarcurp.com/api/v1"
 DEFAULT_TIMEOUT = 30.0
 # Cloudflare, in front of the API, answers 403 to urllib's default
 # "Python-urllib/3.x" User-Agent, so every request names the SDK instead.
-USER_AGENT = "verificar-curp-python/1.0.0"
+USER_AGENT = "verificar-curp-python/1.1.0"
 
 # Firma de un "opener" inyectable (para tests): recibe un Request y un timeout
 # y devuelve un objeto con .status / .getcode() y .read(), o lanza HTTPError.
@@ -127,6 +127,54 @@ class VerificarCurpClient:
         """Consulta el saldo de tokens de tu cuenta."""
         body = self._request("GET", "/balance")
         return int(body["balance"])
+
+    def create_capture_link(
+        self,
+        destination_id: str,
+        *,
+        persona: Optional[Persona] = None,
+        ask_guest_persona: bool = False,
+        reference: Optional[str] = None,
+        requester_name: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> CaptureLink:
+        """Crea un enlace de un solo uso para que tu cliente escriba su CURP.
+
+        Con ``persona`` (los datos de la reservación) la CURP se coteja contra
+        ellos sin mostrárselos (``cotejo_reserva``); con
+        ``ask_guest_persona=True`` el cliente también escribe su nombre y fecha
+        de nacimiento (``cotejo``).
+
+        Crearlo no cuesta; cada respuesta del cliente cuesta 1 token (hasta 3
+        intentos) y solo una CURP válida que coincide llega a
+        ``destination_id``.
+
+        Lanza :class:`VerificarCurpError` (``DESTINATION_NOT_FOUND``,
+        ``INVALID_PERSONA``, ``TOO_MANY_LIVE_LINKS``, …).
+        """
+        if not destination_id:
+            raise VerificarCurpError("Falta `destination_id`.", "INVALID_INPUT")
+
+        payload: dict = {"destinationId": destination_id}
+        if persona is not None:
+            payload["persona"] = persona
+        if ask_guest_persona:
+            payload["askGuestPersona"] = True
+        if reference is not None:
+            payload["reference"] = reference
+        if requester_name is not None:
+            payload["requesterName"] = requester_name
+        if name is not None:
+            payload["name"] = name
+
+        body = self._request("POST", "/capture-links", json_body=payload)
+        return CaptureLink(
+            id=body["id"],
+            url=body["url"],
+            reference=body.get("reference"),
+            ask_guest_persona=bool(body.get("askGuestPersona", False)),
+            expires_at=body["expiresAt"],
+        )
 
     # -- internals ---------------------------------------------------------
 

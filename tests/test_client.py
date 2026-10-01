@@ -86,6 +86,60 @@ class ClientTests(unittest.TestCase):
             {"curp": "PEGJ850101HDFRRL04", "persona": {"nombres": "Julio", "segundoApellido": None}},
         )
 
+    def test_create_capture_link_sends_only_what_was_given(self):
+        link = {
+            "success": True,
+            "id": "clx_1",
+            "url": "https://verificarcurp.com/c/tok",
+            "reference": "reserva-8841",
+            "documentType": None,
+            "requireBack": False,
+            "askGuestPersona": True,
+            "expiresAt": "2026-10-01T18:00:00.000Z",
+        }
+        opener = ok_opener(201, link)
+        client = VerificarCurpClient("k", opener=opener)
+        result = client.create_capture_link(
+            "dst_1",
+            reference="reserva-8841",
+            persona={"nombres": "Julio", "segundoApellido": None},
+            ask_guest_persona=True,
+        )
+        self.assertEqual(result.id, "clx_1")
+        self.assertEqual(result.url, link["url"])
+        self.assertEqual(result.reference, "reserva-8841")
+        self.assertTrue(result.ask_guest_persona)
+        self.assertEqual(result.expires_at, link["expiresAt"])
+
+        req = opener.calls[0]
+        self.assertEqual(req.full_url, "https://verificarcurp.com/api/v1/capture-links")
+        self.assertEqual(req.get_method(), "POST")
+        self.assertEqual(
+            json.loads(req.data),
+            {
+                "destinationId": "dst_1",
+                "persona": {"nombres": "Julio", "segundoApellido": None},
+                "askGuestPersona": True,
+                "reference": "reserva-8841",
+            },
+        )
+
+    def test_create_capture_link_refuses_missing_destination_and_surfaces_codes(self):
+        opener = ok_opener(201, {})
+        client = VerificarCurpClient("k", opener=opener)
+        with self.assertRaises(VerificarCurpError) as ctx:
+            client.create_capture_link("")
+        self.assertEqual(ctx.exception.code, "INVALID_INPUT")
+        self.assertEqual(opener.calls, [])
+
+        client = VerificarCurpClient(
+            "k",
+            opener=http_error_opener(400, {"success": False, "error": "x", "code": "TOO_MANY_LIVE_LINKS"}),
+        )
+        with self.assertRaises(VerificarCurpError) as ctx:
+            client.create_capture_link("dst_1")
+        self.assertEqual(ctx.exception.code, "TOO_MANY_LIVE_LINKS")
+
     def test_validate_verificar_uses_api_field_names(self):
         verificacion = {"aceptada": True, "job_id": "clz1", "estado": "pendiente", "expires_at": "x"}
         opener = ok_opener(

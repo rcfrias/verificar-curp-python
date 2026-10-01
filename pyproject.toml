@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "verificar-curp"
-version = "1.0.0"
+version = "1.1.0"
 description = "SDK oficial de Verificar CURP: valida la estructura de una CURP, cotéjala con los datos de la persona y verifícala en el registro RENAPO."
 readme = "README.md"
 requires-python = ">=3.9"

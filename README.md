@@ -5,6 +5,7 @@ SDK oficial de [Verificar CURP](https://verificarcurp.com) para Python.
 - **Valida** la estructura de una CURP (entidad, fecha, dígito verificador) y te dice qué está mal.
 - **Coteja** la CURP con los datos que ya tienes de la persona.
 - **Verifica** la CURP en el registro RENAPO; el resultado llega a tu webhook, correo o chat.
+- **Enlaces de captura**: tu cliente escribe su CURP desde su celular y el resultado llega a tu destino.
 - **Verifica la firma** de los webhooks que te enviamos.
 
 Sin dependencias. Python 3.9+.
@@ -68,6 +69,27 @@ status.valores  # dict o None
 `valores` llega **una sola vez** y se borra en la misma operación. Si tu destino ya lo recibió, aquí
 solo verás el estado; es la forma de recuperarlo cuando la entrega a tu destino falló.
 
+## Enlaces de captura
+
+Un enlace de un solo uso para que tu cliente escriba su CURP desde su celular (por ejemplo, en el
+check-in). Si mandas los datos de la reservación en `persona`, la CURP se coteja contra ellos sin
+mostrárselos; con `ask_guest_persona=True` el cliente también escribe su nombre y fecha de nacimiento.
+
+```python
+link = client.create_capture_link(
+    "dst_...",
+    reference="reserva-8841",  # opcional; viaja en la entrega
+    persona={"nombres": "Julio", "primerApellido": "Pérez", "fechaNacimiento": "1985-01-01"},
+)
+
+link.url  # muéstralo como QR o envíalo; solo se devuelve aquí, no lo registres en logs
+```
+
+Crear el enlace no cuesta. Cada respuesta del cliente cuesta 1 token (hasta 3 intentos, es decir
+hasta 3 tokens) y solo una CURP válida que coincide llega a tu destino, como evento
+`extraction.completed` con `source: "capture-link"` y los campos `curp`, `valida`, `entidad`,
+`cotejo_reserva`, `cotejo_reserva_<campo>`, etc.
+
 ## Recibir el webhook
 
 Verifica la firma con el cuerpo **crudo**, antes de interpretarlo:
@@ -97,7 +119,7 @@ def curp_webhook():
 
 `verify_webhook_signature()` hace lo mismo y devuelve `True`/`False`. Por defecto rechaza firmas con
 más de 300 s de antigüedad (`tolerance_seconds`). Eventos: `curp.verification.completed`, `.failed`,
-`.retrying` y `.manual_review`.
+`.retrying`, `.manual_review` y `extraction.completed` (enlaces de captura).
 
 ## Saldo
 
@@ -124,6 +146,8 @@ except VerificarCurpError as err:
 | --- | --- | --- |
 | `INVALID_REQUEST` | 400 | Cuerpo inválido |
 | `DESTINATION_NOT_FOUND` | 400 | El destino no existe o no es tuyo (no se cobra) |
+| `INVALID_PERSONA` / `INVALID_REFERENCE` / `INVALID_REQUESTER_NAME` / `INVALID_NAME` | 400 | Campo inválido al crear un enlace |
+| `TOO_MANY_LIVE_LINKS` | 400 | Ya tienes 20 enlaces vigentes |
 | `MISSING_API_KEY` / `INVALID_API_KEY` | 401 | API key ausente o incorrecta |
 | `INSUFFICIENT_TOKENS` | 402 | Sin saldo |
 | `NOT_FOUND` | 404 | La verificación no es de tu cuenta |

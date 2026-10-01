@@ -61,6 +61,20 @@ class VerificationStatusResult:
     valores: Optional[RegistryValues] = None
 
 
+@dataclass(frozen=True)
+class CaptureLink:
+    """Enlace de captura recién creado."""
+
+    id: str
+    #: URL para tu cliente. Contiene un token de acceso y solo se devuelve UNA
+    #: vez: trátala como una credencial y no la registres en logs.
+    url: str
+    reference: Optional[str]
+    ask_guest_persona: bool
+    #: Fecha límite (ISO 8601) para abrir el enlace.
+    expires_at: str
+
+
 RawBody = Union[str, bytes, bytearray]
 
 __all__ = [
@@ -68,6 +82,7 @@ __all__ = [
     "Reintentos",
     "CurpAnswer",
     "Verificacion",
+    "CaptureLink",
     "RegistryValues",
     "ValidateResult",
     "VerificationStatusResult",
